@@ -60,6 +60,8 @@ async def generate_tts(
                 'speaker_file': (speaker_file.filename, await speaker_file.read())
             }
             
+            print(f"Forwarding request to GPU server: {GPU_SERVER_URL}")  # URL 로깅
+            
             response = await client.post(
                 f"{GPU_SERVER_URL}/generate-tts",
                 data=form_data,
@@ -67,7 +69,9 @@ async def generate_tts(
             )
             
             if response.status_code != 200:
-                raise HTTPException(status_code=response.status_code, detail="GPU 서버 처리 실패")
+                error_content = await response.text()  # 에러 응답 내용 확인
+                print(f"GPU server error: {error_content}")  # 에러 내용 로깅
+                raise HTTPException(status_code=response.status_code, detail=f"GPU 서버 처리 실패: {error_content}")
             
             return StreamingResponse(
                 response.iter_bytes(),
@@ -75,7 +79,7 @@ async def generate_tts(
             )
 
     except Exception as e:
-        print(f"에러 발생: {str(e)}")
+        print(f"상세 에러 발생: {str(e)}")  # 상세 에러 로깅
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/test")
